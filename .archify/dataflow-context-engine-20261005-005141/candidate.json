@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "diagram_type": "dataflow",
+  "meta": {
+    "title": "Context Engine Data Flow",
+    "output": ".archify/dataflow-context-engine-20261005-005141/context-engine.html",
+    "quality_profile": "showcase",
+    "viewBox": [1075, 680]
+  },
+  "stages": [
+    { "label": "Signals" },
+    { "label": "Collect" },
+    { "label": "Evaluate" },
+    { "label": "State" },
+    { "label": "Surface" }
+  ],
+  "nodes": [
+    { "id": "time", "type": "external", "label": "Time & Date", "stage": 0, "row": 0, "tag": "ambient" },
+    { "id": "calendar", "type": "database", "label": "Calendar & Reminders", "stage": 0, "row": 1, "width": 140 },
+    { "id": "location", "type": "security", "label": "Location Geofences", "sublabel": "explicit consent", "stage": 0, "row": 2, "tag": "opt-in", "width": 130 },
+    { "id": "music", "type": "external", "label": "Now Playing", "stage": 0, "row": 3, "tag": "optional" },
+    { "id": "routine", "type": "database", "label": "Routines & Habits", "stage": 0, "row": 4, "yOffset": -40 },
+    { "id": "ambient", "type": "backend", "label": "Ambient Signals", "sublabel": "always on", "stage": 1, "row": 1, "width": 120 },
+    { "id": "live", "type": "backend", "label": "Live Signals", "sublabel": "location · music", "stage": 1, "row": 3, "width": 120 },
+    { "id": "engine", "type": "backend", "label": "Context Engine", "sublabel": "signal fusion", "stage": 2, "row": 2, "tag": "confidence scoring", "width": 150 },
+    { "id": "state", "type": "database", "label": "Current Context", "sublabel": "structured state", "stage": 3, "row": 2, "tag": "UNKNOWN allowed", "width": 140 },
+    { "id": "dashboard", "type": "frontend", "label": "Adaptive Dashboard", "sublabel": "what matters now", "stage": 4, "row": 1, "width": 150 },
+    { "id": "assistant", "type": "backend", "label": "AI Assistant", "sublabel": "grounded answers", "stage": 4, "row": 3, "width": 150 }
+  ],
+  "flows": [
+    { "id": "f-time", "from": "time", "to": "ambient", "label": "clock", "fromSide": "right", "toSide": "top", "via": [[170, 157], [170, 214], [315, 214]], "labelAt": [184, 187] },
+    { "id": "f-cal", "from": "calendar", "to": "ambient", "label": "agenda", "fromSide": "right", "toSide": "left", "labelAt": [205, 288] },
+    { "id": "f-loc", "from": "location", "to": "live", "label": "coords", "variant": "security", "fromSide": "right", "toSide": "top", "via": [[220, 385], [220, 444], [315, 444]], "labelAt": [220, 415] },
+    { "id": "f-music", "from": "music", "to": "live", "label": "song", "fromSide": "right", "toSide": "left", "labelAt": [190, 517] },
+    { "id": "f-routine", "from": "routine", "to": "live", "label": "habits", "fromSide": "right", "toSide": "bottom", "via": [[240, 573], [240, 556], [315, 556]], "labelAt": [232, 554] },
+    { "id": "f-snapA", "from": "ambient", "to": "engine", "label": "saved", "variant": "emphasis", "fromSide": "right", "toSide": "top", "via": [[425, 271], [425, 328], [530, 328]], "labelAt": [428, 334] },
+    { "id": "f-snapB", "from": "live", "to": "engine", "label": "live", "variant": "emphasis", "fromSide": "right", "toSide": "bottom", "via": [[425, 499], [425, 442], [530, 442]], "labelAt": [428, 446] },
+    { "id": "f-ctx", "from": "engine", "to": "state", "label": "state", "variant": "emphasis", "fromSide": "right", "toSide": "left", "labelAt": [640, 369] },
+    { "id": "f-dash", "from": "state", "to": "dashboard", "label": "today", "fromSide": "right", "toSide": "left", "via": [[860, 385], [860, 271]], "labelAt": [872, 340] },
+    { "id": "f-assist", "from": "state", "to": "assistant", "label": "context", "fromSide": "right", "toSide": "left", "via": [[860, 385], [860, 499]], "labelAt": [872, 436] }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Signal sources", "items": ["Time, calendar and habits are always-available ambient signals", "Location and now-playing join as live, optional signals"] },
+    { "dot": "rose", "title": "Privacy boundary", "items": ["Location is opt-in and resolves to known places, not GPS trails", "No signal overrides explicit user information"] },
+    { "dot": "emerald", "title": "Honest states", "items": ["UNKNOWN is a first-class context", "A scheduled event is reported as scheduled, not attended, without location confirmation"] }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\candidate.json",
+    "sha256": "44204ab1575d551d5fd735339a84e1cd6486a4568f6fbc57497313209ac20ebb",
+    "bytes": 3504
+  },
+  "artifact": {
+    "path": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\universal-capture.html",
+    "sha256": "adbf0013b0ddb450c1b1fa104d39d1ddca66d5739f1978ad70e91d9b2e420d62",
+    "bytes": 758937
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\universal-capture.finalize.json",
+    "summaryReceipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\universal-capture.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\universal-capture.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-04T19:38:36.600Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2386,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 2,
+      "routesOverSuggestedStretch": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "revise",
+            "from": "preview",
+            "to": "input",
+            "label": "revise or discard",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 3,
+          "stretch": 1.052
+        },
+        {
+          "relationship": {
+            "id": "submit",
+            "from": "input",
+            "to": "edge",
+            "label": "submit",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 4,
+          "stretch": 1.553
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "preview → input needs 3 bends: move node preview or input so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "input → edge needs 4 bends: move node input or edge so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

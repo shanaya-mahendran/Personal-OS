@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "503dcdbe-3caf-42c8-8332-b5e5b1ba5cf2",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\architecture-shanaya-os-20261005-005141\\candidate.json",
+  "output": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\architecture-shanaya-os-20261005-005141\\shanaya-os-architecture.html",
+  "specification": {
+    "sha256": "1302e3eeef5fb99542a8b291d178ac8017e29694474542580ad0db4b69d84e5d",
+    "bytes": 3598
+  },
+  "artifact": {
+    "sha256": "50692b10232306be9baac32577541b8e825e4e5805a71d56e0fc084a861ebc0f",
+    "bytes": 761469
+  }
+}

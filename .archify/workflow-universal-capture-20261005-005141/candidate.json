@@ -1,0 +1,47 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Universal Capture Pipeline",
+    "output": ".archify/workflow-universal-capture-20261005-005141/universal-capture.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "capture", "label": "Capture & Decide" },
+    { "id": "ai", "label": "Interpretation" },
+    { "id": "data", "label": "Persistence" }
+  ],
+  "phases": [
+    { "id": "intake", "label": "Capture + ingest", "fromCol": 0, "toCol": 1 },
+    { "id": "interpret", "label": "AI proposes", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "commit", "label": "User decides + persist", "fromCol": 4, "toCol": 5 }
+  ],
+  "groups": [
+    { "id": "server", "label": "Server boundary — key never leaves", "lane": "ai", "fromCol": 1, "toCol": 3, "variant": "security" },
+    { "id": "provenance", "label": "Provenance", "lane": "data", "fromCol": 1, "toCol": 1, "variant": "dashed" }
+  ],
+  "mainPath": ["input", "edge", "gemini", "rules", "preview", "persist"],
+  "nodes": [
+    { "id": "input", "lane": "capture", "col": 0, "type": "frontend", "label": "Universal Capture", "sublabel": "text · paste · image · voice", "width": 140 },
+    { "id": "edge", "lane": "ai", "col": 1, "type": "backend", "label": "Edge Function", "sublabel": "process-capture", "tag": "server-side key", "width": 132 },
+    { "id": "gemini", "lane": "ai", "col": 2, "type": "cloud", "label": "Gemini API", "sublabel": "extract · classify", "width": 132 },
+    { "id": "rules", "lane": "ai", "col": 3, "type": "security", "label": "Zod + Business Rules", "sublabel": "conflict · confidence", "width": 150 },
+    { "id": "preview", "lane": "capture", "col": 4, "type": "security", "label": "Proposal Preview", "sublabel": "edit · confirm · reject", "tag": "low-confidence flagged", "width": 150 },
+    { "id": "persist", "lane": "data", "col": 5, "type": "database", "label": "Supabase Records", "sublabel": "task · event · note · memory", "width": 150 },
+    { "id": "raw", "lane": "data", "col": 1, "type": "database", "label": "Captures + Storage", "sublabel": "raw input · provenance", "width": 140 }
+  ],
+  "edges": [
+    { "id": "submit", "from": "input", "to": "edge", "label": "submit" },
+    { "id": "store-raw", "from": "edge", "to": "raw", "label": "raw + provenance", "variant": "dashed", "role": "branch" },
+    { "id": "prompt", "from": "edge", "to": "gemini", "label": "prompt + attachment", "variant": "emphasis" },
+    { "id": "extract", "from": "gemini", "to": "rules", "label": "structured JSON + confidence" },
+    { "id": "proposal", "from": "rules", "to": "preview", "label": "valid proposal" },
+    { "id": "confirmed", "from": "preview", "to": "persist", "label": "confirmed", "variant": "emphasis" },
+    { "id": "revise", "from": "preview", "to": "input", "label": "revise or discard", "variant": "dashed", "role": "return" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Capture-first", "items": ["One entry point for thoughts, posters, job ads and voice notes", "The OS decides whether something is a task, event, idea or memory"] },
+    { "dot": "rose", "title": "Human control", "items": ["Gemini proposes, the user disposes: nothing persists without confirmation", "Low-confidence fields are flagged for review instead of guessed"] },
+    { "dot": "emerald", "title": "Provenance", "items": ["Raw text and images stay alongside the AI result", "Wrong extractions can always be re-checked against the source"] }
+  ]
+}

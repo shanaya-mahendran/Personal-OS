@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Shanaya OS palette (docs/DESIGN.md) */
+    --canvas: #fafaf9;
+    --surface: #ffffff;
+    --ink: #18181b;
+    --muted: #71717a;
+    --line: rgba(24, 24, 27, 0.08);
+    --grove: #166534;
+    --grove-tint: rgba(22, 101, 52, 0.08);
+    --warning: #b45309;
+    --danger: #b91c1c;
+    --info: #1d4ed8;
+    --radius: 16px;
+
+    /* Living Experience accent system (new). */
+    --living-canvas: #07060a;
+    --living-surface: #0f0d14;
+    --living-surface-2: #15121b;
+    --living-ink: #f6f3ff;
+    --living-muted: #9a94b3;
+    --living-line: rgba(255, 255, 255, 0.08);
+    --living-glow: rgba(150, 120, 255, 0.45);
+    --living-gold: #ffd36e;
+    --living-gold-soft: rgba(255, 211, 110, 0.14);
+    --living-cyan: #5fe6d6;
+    --living-cyan-soft: rgba(95, 230, 214, 0.14);
+    --living-rose: #ff7c92;
+    --living-amber: #ffb74d;
+  }
+
+  .dark {
+    --canvas: #09090b;
+    --surface: #111113;
+    --ink: #fafaf9;
+    --muted: #a1a1aa;
+    --line: rgba(250, 250, 249, 0.1);
+    --grove: #4ade80;
+    --grove-tint: rgba(74, 222, 128, 0.12);
+    --warning: #fbbf24;
+    --danger: #f87171;
+    --info: #60a5fa;
+  }
+
+  * {
+    @apply border-line;
+  }
+
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: 'ss01' on;
+  }
+
+  html,
+  body {
+    min-height: 100dvh;
+  }
+
+  /* Every time-like value renders in Geist Mono (design signature). */
+  .tabular,
+  time,
+  .font-mono {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Living Experience typography contrast (new). */
+  .living-display {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer components {
+  /* Double-bezel card (design §4) */
+  .bezel {
+    @apply rounded-[18px] bg-black/[0.03] p-1.5 ring-1 ring-line dark:bg-white/[0.04];
+  }
+  .bezel-core {
+    @apply rounded-[14px] bg-surface shadow-[inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-none;
+  }
+
+  .hairline-divide > * + * {
+    @apply border-t border-line;
+  }
+
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-grove focus-visible:ring-offset-2;
+  }
+
+  /* Living Experience surfaces (new). */
+  .living-bezel {
+    box-shadow: 0 0 0 1px var(--living-line), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    background: var(--living-surface);
+    border-radius: 22px;
+  }
+
+  .living-bezel-glow {
+    box-shadow: 0 0 0 1px var(--living-line), 0 0 18px var(--living-glow);
+    background: var(--living-surface);
+    border-radius: 22px;
+  }
+
+  .living-glass {
+    background: color-mix(in srgb, var(--living-surface) 78%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid var(--living-line);
+    border-radius: 18px;
+  }
+
+  .living-glow-line {
+    box-shadow: 0 0 14px var(--living-glow);
+    border-radius: 999px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .living-fade {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+  }
+}

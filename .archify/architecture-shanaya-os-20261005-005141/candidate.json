@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Shanaya OS — System Architecture",
+    "output": ".archify/architecture-shanaya-os-20261005-005141/shanaya-os-architecture.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    { "id": "user", "type": "external", "label": "Shanaya", "sublabel": "signed-in owner", "icon": "person", "pos": [40, 306], "size": [120, 60] },
+    { "id": "pwa", "type": "frontend", "label": "Next.js PWA", "sublabel": "Dashboard · Capture · Context", "pos": [240, 300], "size": [170, 72] },
+    { "id": "edge", "type": "backend", "label": "Edge Functions", "sublabel": "process-capture · ai-assistant", "tag": "Deno runtime", "pos": [510, 300], "size": [175, 72] },
+    { "id": "gemini", "type": "cloud", "label": "Gemini API", "sublabel": "interpretation layer", "pos": [785, 306], "size": [130, 60] },
+    { "id": "auth", "type": "security", "label": "Supabase Auth", "sublabel": "owner-only sessions", "pos": [262.5, 120], "size": [125, 60] },
+    { "id": "storage", "type": "cloud", "label": "Supabase Storage", "sublabel": "posters · certificates", "pos": [257.5, 470], "size": [135, 60] },
+    { "id": "pg", "type": "database", "label": "PostgreSQL", "sublabel": "tasks · events · career", "tag": "RLS", "pos": [527, 470], "size": [140, 60] },
+    { "id": "vector", "type": "database", "label": "pgvector", "sublabel": "semantic memory", "pos": [740, 470], "size": [120, 60] }
+  ],
+  "boundaries": [
+    { "kind": "region", "label": "Vercel", "wraps": ["pwa"] },
+    { "kind": "region", "label": "Supabase Project", "wraps": ["auth", "edge", "pg", "vector", "storage"] }
+  ],
+  "connections": [
+    { "id": "user-pwa", "from": "user", "to": "pwa", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "pwa-edge", "from": "pwa", "to": "edge", "label": "auth calls" },
+    { "id": "edge-gemini", "from": "edge", "to": "gemini", "label": "interpret", "variant": "emphasis" },
+    { "id": "gemini-return", "from": "gemini", "to": "edge", "label": "structured proposals", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[850, 232], [597.5, 232]] },
+    { "id": "auth-pwa", "from": "auth", "to": "pwa", "label": "JWT session", "variant": "security", "fromSide": "bottom", "toSide": "top" },
+    { "id": "pwa-storage", "from": "pwa", "to": "storage", "label": "file uploads", "fromSide": "bottom", "toSide": "top" },
+    { "id": "edge-pg", "from": "edge", "to": "pg", "label": "confirmed writes", "fromSide": "bottom", "toSide": "top" },
+    { "id": "edge-vector", "from": "edge", "to": "vector", "label": "embeddings", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Capture-first core", "items": ["Universal capture accepts text, paste, images and voice", "Gemini proposes structured records through Edge Functions", "Edge Functions read stored capture files when processing", "Nothing is written until the user confirms the proposal"] },
+    { "dot": "emerald", "title": "Context engine", "items": ["Time, calendar, routines, music and optional location feed one context state", "The dashboard adapts to UNIVERSITY, WORKSHOP, KARATE, HOME or UNKNOWN"] },
+    { "dot": "rose", "title": "Security", "items": ["Row Level Security scopes every table to its owner", "The Gemini key lives in server secrets, never in the browser", "Raw captures are kept as provenance for every AI extraction"] },
+    { "dot": "violet", "title": "Memory", "items": ["pgvector stores embeddings for semantic search", "Memories stay searchable months or years later"] }
+  ]
+}

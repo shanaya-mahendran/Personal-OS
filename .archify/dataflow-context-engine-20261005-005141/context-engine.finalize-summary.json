@@ -1,0 +1,128 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "dataflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\candidate.json",
+    "sha256": "05edf9e876ac33a71dcb5296e9f3bbc10a9bc9ab3d00e8760f03fa55af4db0ba",
+    "bytes": 4283
+  },
+  "artifact": {
+    "path": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\context-engine.html",
+    "sha256": "0e089dda11a161173fc23735dffb41a0f81e866d01d9ad4429bdeb4a558b7a83",
+    "bytes": 761285
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\context-engine.finalize.json",
+    "summaryReceipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\context-engine.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\context-engine.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.0.1",
+    "availableVersion": "3.0.1",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-04T19:38:36.600Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 7752,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "routesOverSuggestedBends": 5
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [],
+      "detours": [
+        {
+          "relationship": {
+            "id": "f-time",
+            "from": "time",
+            "to": "ambient",
+            "label": "clock",
+            "collectionIndex": 0,
+            "artifactIndex": 1
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "f-loc",
+            "from": "location",
+            "to": "live",
+            "label": "coords",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "f-routine",
+            "from": "routine",
+            "to": "live",
+            "label": "habits",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "f-snapA",
+            "from": "ambient",
+            "to": "engine",
+            "label": "saved",
+            "collectionIndex": 5,
+            "artifactIndex": 6
+          },
+          "bends": 3,
+          "stretch": 1
+        },
+        {
+          "relationship": {
+            "id": "f-snapB",
+            "from": "live",
+            "to": "engine",
+            "label": "live",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "bends": 3,
+          "stretch": 1
+        }
+      ],
+      "truncated": false
+    },
+    "hints": [
+      "time → ambient needs 3 bends: move node time or ambient so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "location → live needs 3 bends: move node location or live so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "routine → live needs 3 bends: move node routine or live so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "ambient → engine needs 3 bends: move node ambient or engine so they share a row or column with matching centers, or sit diagonally with a clear corner.",
+      "live → engine needs 3 bends: move node live or engine so they share a row or column with matching centers, or sit diagonally with a clear corner."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

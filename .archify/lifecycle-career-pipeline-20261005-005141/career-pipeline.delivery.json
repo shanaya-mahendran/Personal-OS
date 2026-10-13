@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "345e05b1-9efc-46dd-92e7-754cdaf23062",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\lifecycle-career-pipeline-20261005-005141\\candidate.json",
+  "output": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\lifecycle-career-pipeline-20261005-005141\\career-pipeline.html",
+  "specification": {
+    "sha256": "8ed522fcdcc8a8a2078702eb384a4a0d560e76b6dcc20cd3a5a4868b35ee20b7",
+    "bytes": 2873
+  },
+  "artifact": {
+    "sha256": "7f0c209a081302cf5a2690e237224c0033eb9ac97b2a52a6ef78b158c93e27c3",
+    "bytes": 762909
+  }
+}

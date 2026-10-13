@@ -1,0 +1,54 @@
+# Supabase project configuration for Shanaya OS.
+# Docs: https://supabase.com/docs/guides/local-development/cli/config
+
+project_id = "shanaya-os"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://localhost:3000", "http://localhost:3000/auth/callback"]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+enable_signup = true
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[functions.process-capture]
+verify_jwt = true
+
+[functions.ai-assistant]
+verify_jwt = true
+
+[functions.create-event]
+verify_jwt = true
+
+[functions.generate-embedding]
+verify_jwt = true
+
+[functions.sync-prayer-schedule]
+verify_jwt = true
+
+[functions.daily-review]
+verify_jwt = true

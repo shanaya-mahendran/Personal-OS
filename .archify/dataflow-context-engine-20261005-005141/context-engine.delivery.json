@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "5952dcc8-91be-4260-a2a4-5496b13c255e",
+  "status": "current",
+  "command": "deliver",
+  "type": "dataflow",
+  "input": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\candidate.json",
+  "output": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\dataflow-context-engine-20261005-005141\\context-engine.html",
+  "specification": {
+    "sha256": "05edf9e876ac33a71dcb5296e9f3bbc10a9bc9ab3d00e8760f03fa55af4db0ba",
+    "bytes": 4283
+  },
+  "artifact": {
+    "sha256": "0e089dda11a161173fc23735dffb41a0f81e866d01d9ad4429bdeb4a558b7a83",
+    "bytes": 761285
+  }
+}

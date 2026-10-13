@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "c5227a0c-ae6b-4813-9ad6-244d739f9250",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\candidate.json",
+  "output": "C:\\Users\\LENOVO\\Downloads\\Personal OS\\.archify\\workflow-universal-capture-20261005-005141\\universal-capture.html",
+  "specification": {
+    "sha256": "44204ab1575d551d5fd735339a84e1cd6486a4568f6fbc57497313209ac20ebb",
+    "bytes": 3504
+  },
+  "artifact": {
+    "sha256": "adbf0013b0ddb450c1b1fa104d39d1ddca66d5739f1978ad70e91d9b2e420d62",
+    "bytes": 758937
+  }
+}

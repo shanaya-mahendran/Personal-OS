@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "Career Opportunity Lifecycle",
+    "output": ".archify/lifecycle-career-pipeline-20261005-005141/career-pipeline.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "main", "label": "Active pipeline" },
+    { "id": "waiting", "label": "Waiting" },
+    { "id": "terminal", "label": "Closed outcomes" }
+  ],
+  "states": [
+    { "id": "saved", "type": "start", "label": "Saved", "sublabel": "via Universal Capture", "lane": "main", "col": 0, "step": "01", "tag": "opportunity" },
+    { "id": "applied", "type": "active", "label": "Applied", "sublabel": "CV + letter sent", "lane": "main", "col": 1, "step": "02" },
+    { "id": "interview", "type": "active", "label": "Interview", "sublabel": "screening · technical", "lane": "main", "col": 2, "step": "03", "tag": "multi-stage" },
+    { "id": "offer", "type": "decision", "label": "Offer", "sublabel": "terms received", "lane": "main", "col": 3, "step": "04" },
+    { "id": "accepted", "type": "success", "label": "Accepted", "sublabel": "signed", "lane": "main", "col": 4, "step": "05", "tag": "terminal" },
+    { "id": "followup", "type": "waiting", "label": "Awaiting Reply", "sublabel": "follow-up timer", "lane": "waiting", "col": 1, "tag": "nudge" },
+    { "id": "rejected", "type": "failure", "label": "Rejected", "sublabel": "kept as history", "lane": "terminal", "col": 4, "tag": "terminal" },
+    { "id": "withdrawn", "type": "neutral", "label": "Withdrawn", "sublabel": "by user", "lane": "terminal", "col": 3, "tag": "terminal" }
+  ],
+  "transitions": [
+    { "from": "saved", "to": "applied", "label": "application sent" },
+    { "from": "applied", "to": "interview", "label": "shortlisted" },
+    { "from": "interview", "to": "offer", "label": "selected" },
+    { "from": "offer", "to": "accepted", "label": "signed", "variant": "emphasis" },
+    { "from": "applied", "to": "followup", "label": "no response yet", "variant": "dashed" },
+    { "from": "followup", "to": "interview", "label": "invited", "variant": "emphasis" },
+    { "from": "interview", "to": "rejected", "label": "turned down" },
+    { "from": "offer", "to": "rejected", "label": "declined", "variant": "security" },
+    { "from": "interview", "to": "withdrawn", "label": "user pulls out", "variant": "dashed" }
+  ],
+  "cards": [
+    { "dot": "cyan", "title": "Funnel", "items": ["Opportunities enter through Universal Capture — a pasted ad or poster", "The pipeline moves strictly right: saved, applied, interview, offer"] },
+    { "dot": "amber", "title": "Waiting", "items": ["Awaiting Reply keeps follow-up dates visible without faking progress"] },
+    { "dot": "rose", "title": "Endings", "items": ["Rejections and withdrawals remain searchable for retrospectives", "Every exit keeps its source advertisement for provenance"] }
+  ]
+}
