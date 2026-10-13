@@ -15,9 +15,10 @@
 -- ============================================================================
 
 -- ── Extensions ─────────────────────────────────────────────────────────────
--- Enable pgvector BEFORE any table that uses vector(n).
--- Supabase projects have pgvector available; it just needs to be enabled once.
-create extension if not exists vector       with schema extensions;
+-- pgvector MUST be in the public schema so its operators (<=> etc.) are
+-- reachable without an explicit schema-qualified search_path override.
+-- uuid-ossp and pg_trgm are safe in extensions (no custom operators in SQL).
+create extension if not exists vector       with schema public;
 create extension if not exists "uuid-ossp" with schema extensions;
 create extension if not exists pg_trgm      with schema extensions;
 
@@ -641,7 +642,9 @@ returns table (
 language sql
 stable
 security invoker
-set search_path = public
+-- Include both schemas so the <=> operator is found whether vector was
+-- installed in public (preferred) or extensions (legacy).
+set search_path = public, extensions
 as $$
   select
     m.id,
