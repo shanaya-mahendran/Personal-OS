@@ -49,10 +49,12 @@ create or replace function public.apply_updated_at(target regclass)
 returns void
 language plpgsql
 as $$
-execute format(
-  'create trigger set_updated_at before update on %s for each row execute function public.set_updated_at()',
-  target
-);
+begin
+  execute format(
+    'create trigger set_updated_at before update on %s for each row execute function public.set_updated_at()',
+    target
+  );
+end;
 $$;
 
 -- ── Profiles & settings ─────────────────────────────────────────────────────
