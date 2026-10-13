@@ -23,6 +23,7 @@ export interface EventSignal {
 export interface TaskSignal {
   id: string;
   status: string;
+  title?: string;
   due_at: string | null;
 }
 
@@ -53,6 +54,10 @@ export interface ContextSignals {
   places: PlaceSignal[];
   geolocation?: GeolocationSignal | null;
   music?: MusicSignal | null;
+  /** True when the user is actively using the application */
+  userActive?: boolean;
+  /** Explicit user selection / confirmation */
+  manualOverride?: import('./states').ContextState | null;
 }
 
 /** Haversine distance in meters. */

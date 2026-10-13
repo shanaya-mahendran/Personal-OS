@@ -55,6 +55,6 @@ export interface ContextResult {
   location_match: boolean;
   time_match: boolean;
   /** Human explanation shown in the chip, e.g. "scheduled" vs geofence. */
-  source: 'event' | 'place' | 'time' | 'none';
+  source: 'event' | 'place' | 'time' | 'user' | 'activity' | 'prompt' | 'none';
   label: string;
 }

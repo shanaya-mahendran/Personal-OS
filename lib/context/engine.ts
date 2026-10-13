@@ -46,8 +46,16 @@ function result(
 }
 
 export function evaluateContext(signals: ContextSignals): ContextResult {
-  const { time, events, places, geolocation } = signals;
+  const { time, events, tasks, places, geolocation, userActive, manualOverride } = signals;
   const now = time.now;
+
+  // Rule 0: Manual user confirmation overrides all inferences
+  if (manualOverride) {
+    return result(manualOverride, 1.0, {
+      source: 'user',
+      label: 'You set this',
+    });
+  }
 
   const ongoing = events.filter((e) => isOngoing(e.start_at, e.end_at, now));
   const place = matchPlace(places, geolocation);
@@ -86,7 +94,17 @@ export function evaluateContext(signals: ContextSignals): ContextResult {
     });
   }
 
-  // Rule 3: geofence match without an ongoing event.
+  // Rule 3: Active in-progress task inference
+  const inProgressTask = tasks.find((t) => t.status === 'in_progress');
+  if (inProgressTask) {
+    const taskState = hintToState(inProgressTask.title) ?? 'STUDYING';
+    return result(taskState, 0.85, {
+      source: 'activity',
+      label: inProgressTask.title ? `Active: ${inProgressTask.title}` : 'Working on task',
+    });
+  }
+
+  // Rule 4: geofence match without an ongoing event.
   if (place && placeState) {
     return result(placeState, 0.85, {
       location_match: true,
@@ -96,13 +114,20 @@ export function evaluateContext(signals: ContextSignals): ContextResult {
     });
   }
 
-  // Rule 4: sleep window (time-only, explicitly low confidence).
+  // Rule 5: sleep window
   const mins = localMinutes(now, time.timezone);
   if (mins >= SLEEP_START_MIN || mins < SLEEP_END_MIN) {
+    if (userActive) {
+      return result('UNKNOWN', 0, {
+        time_match: true,
+        source: 'prompt',
+        label: 'Working late · Tap to set activity',
+      });
+    }
     return result('SLEEPING', 0.5, { time_match: true, source: 'time' });
   }
 
-  // Rule 5: nothing matches → UNKNOWN, said out loud in the UI.
+  // Rule 6: nothing matches → UNKNOWN
   return result('UNKNOWN', 0, { source: 'none' });
 }
 

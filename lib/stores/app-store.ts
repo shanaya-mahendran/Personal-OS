@@ -3,14 +3,16 @@
  * Only the derived context name is cached — never raw coordinates.
  */
 import { create } from 'zustand';
-import type { ContextResult } from '@/lib/context/states';
+import type { ContextResult, ContextState } from '@/lib/context/states';
 
 interface ContextStore {
   result: ContextResult | null;
   updatedAt: number | null;
   locationEnabled: boolean;
+  manualOverride: ContextState | null;
   setResult: (r: ContextResult) => void;
   setLocationEnabled: (v: boolean) => void;
+  setManualOverride: (override: ContextState | null) => void;
   clear: () => void;
 }
 
@@ -18,9 +20,11 @@ export const useContextStore = create<ContextStore>((set) => ({
   result: null,
   updatedAt: null,
   locationEnabled: false,
+  manualOverride: null,
   setResult: (result) => set({ result, updatedAt: Date.now() }),
   setLocationEnabled: (locationEnabled) => set({ locationEnabled }),
-  clear: () => set({ result: null, updatedAt: null }),
+  setManualOverride: (manualOverride) => set({ manualOverride }),
+  clear: () => set({ result: null, updatedAt: null, manualOverride: null }),
 }));
 
 interface CaptureStore {

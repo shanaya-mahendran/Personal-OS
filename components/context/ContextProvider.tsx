@@ -37,8 +37,26 @@ export function ContextProvider({
   children: React.ReactNode;
   locationEnabled?: boolean;
 }) {
-  const { result, setResult, setLocationEnabled } = useContextStore();
+  const { result, setResult, setLocationEnabled, manualOverride } = useContextStore();
   const [loading, setLoading] = React.useState(true);
+  // Track whether the user is actively interacting with the app
+  const [userActive, setUserActive] = React.useState(false);
+  const activityTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Mark user as active on any interaction; clear after 5 minutes of inactivity
+  React.useEffect(() => {
+    const mark = () => {
+      setUserActive(true);
+      if (activityTimer.current) clearTimeout(activityTimer.current);
+      activityTimer.current = setTimeout(() => setUserActive(false), 5 * 60 * 1000);
+    };
+    const events = ['mousedown', 'keydown', 'touchstart', 'scroll'] as const;
+    events.forEach((ev) => window.addEventListener(ev, mark, { passive: true }));
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, mark));
+      if (activityTimer.current) clearTimeout(activityTimer.current);
+    };
+  }, []);
 
   const evaluate = React.useCallback(async () => {
     const timezone = browserTimeZone();
@@ -67,7 +85,8 @@ export function ContextProvider({
         .neq('status', 'cancelled'),
       supabase
         .from('tasks')
-        .select('id, status, due_at')
+        // Include title so the engine can infer context from the task name
+        .select('id, title, status, due_at')
         .eq('user_id', user.id)
         .neq('status', 'cancelled')
         .limit(50),
@@ -130,11 +149,13 @@ export function ContextProvider({
         ? { latitude: geo.coords.latitude, longitude: geo.coords.longitude }
         : null,
       music: null,
+      userActive,
+      manualOverride: manualOverride ?? null,
     });
 
     setResult(next);
     setLoading(false);
-  }, [locationEnabled, setResult]);
+  }, [locationEnabled, setResult, userActive, manualOverride]);
 
   React.useEffect(() => {
     setLocationEnabled(locationEnabled);
