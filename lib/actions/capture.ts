@@ -16,6 +16,10 @@ import { EventCreateSchema } from '@/lib/validation/event';
 import { TaskCreateSchema } from '@/lib/validation/task';
 import { MemoryCreateSchema, NoteCreateSchema, OpportunityCreateSchema } from '@/lib/validation/career';
 import { detectConflicts, type OverlappingEvent } from '@/lib/calendar/conflicts';
+import { generateContent, parseJsonText } from '@/lib/gemini/client';
+import { CAPTURE_SYSTEM_PROMPT } from '@/lib/gemini/prompts';
+import { CaptureResultSchema } from '@/lib/gemini/schemas';
+import { normalizeConfidence } from '@/lib/ai/confidence';
 import type { CaptureRow, Database } from '@/lib/supabase/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -30,6 +34,132 @@ export interface CaptureResult<T = unknown> {
   ok: boolean;
   data?: T;
   error?: string;
+}
+
+const CONFIDENCE_FIELDS = [
+  'title',
+  'date',
+  'time',
+  'location',
+  'organizer',
+  'description',
+  'company',
+  'role',
+  'body',
+  'kind',
+  'url',
+  'reason',
+];
+
+const CONTENT_FIELDS: Record<string, string[]> = {
+  task: ['title', 'date', 'time', 'description', 'reason'],
+  event: ['title', 'date', 'time', 'location', 'organizer', 'description'],
+  career_opportunity: ['company', 'role', 'url', 'date', 'location', 'description'],
+  note: ['title', 'body'],
+  memory: ['title', 'body', 'kind'],
+  reminder: ['title', 'date', 'time'],
+  unknown: ['reason'],
+};
+
+async function processCaptureDirect(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  captureId: string,
+): Promise<void> {
+  try {
+    const { data: capture } = await supabase
+      .from('captures')
+      .select('*')
+      .eq('id', captureId)
+      .eq('user_id', userId)
+      .single();
+    if (!capture) return;
+
+    await supabase
+      .from('captures')
+      .update({ processing_status: 'processing' })
+      .eq('id', captureId);
+
+    const parts: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }> = [];
+    if (capture.raw_text) {
+      parts.push({ text: capture.raw_text });
+    }
+    if (capture.storage_path) {
+      const { data: signed } = await supabase.storage
+        .from('captures')
+        .createSignedUrl(capture.storage_path, 60 * 5);
+      if (signed?.signedUrl) {
+        const imgRes = await fetch(signed.signedUrl);
+        if (imgRes.ok) {
+          const buf = Buffer.from(await imgRes.arrayBuffer());
+          parts.push({
+            inlineData: {
+              mimeType: imgRes.headers.get('content-type') ?? 'image/jpeg',
+              data: buf.toString('base64'),
+            },
+          });
+        }
+      }
+    }
+
+    if (parts.length === 0) {
+      await supabase
+        .from('captures')
+        .update({ processing_status: 'failed', processed_at: new Date().toISOString() })
+        .eq('id', captureId);
+      return;
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('timezone')
+      .eq('id', userId)
+      .maybeSingle();
+
+    const tz = profile?.timezone || 'Asia/Colombo';
+    const system = CAPTURE_SYSTEM_PROMPT.replaceAll('{iso_now}', new Date().toISOString())
+      .replaceAll('{tz}', tz);
+
+    const result = await generateContent({
+      system,
+      contents: [{ role: 'user', parts }],
+    });
+
+    const parsed = CaptureResultSchema.safeParse(parseJsonText<unknown>(result.text));
+    if (!parsed.success) {
+      await supabase
+        .from('captures')
+        .update({ processing_status: 'failed', processed_at: new Date().toISOString() })
+        .eq('id', captureId);
+      return;
+    }
+
+    const extraction = parsed.data;
+    const confidence = normalizeConfidence(
+      (extraction as unknown as { confidence?: Record<string, number> }).confidence,
+      CONTENT_FIELDS[extraction.type] ?? CONFIDENCE_FIELDS,
+    );
+    const aiResult = { ...extraction } as Record<string, unknown>;
+    delete aiResult.confidence;
+
+    await supabase
+      .from('captures')
+      .update({
+        ai_result: aiResult as unknown as Record<string, never>,
+        confidence: confidence as unknown as Record<string, never>,
+        processing_status: 'awaiting_confirmation',
+        processed_at: new Date().toISOString(),
+      })
+      .eq('id', captureId);
+
+    revalidateApp(['/inbox', '/dashboard']);
+  } catch (err) {
+    console.warn('Direct capture processing failed:', err);
+    await supabase
+      .from('captures')
+      .update({ processing_status: 'failed', processed_at: new Date().toISOString() })
+      .eq('id', captureId);
+  }
 }
 
 /** Invoke an Edge Function with the caller's JWT (never the service key). */
@@ -73,9 +203,12 @@ export async function submitCapture(input: unknown): Promise<CaptureResult<{ id:
       .single();
     if (error) throw new ActionError(error.message);
 
-    // Fire processing; if the function is unreachable we leave the row in
-    // 'pending' so the inbox can retry without losing the raw capture.
-    void invokeEdge(supabase, 'process-capture', { capture_id: data.id });
+    // Fire processing directly if server has GEMINI_API_KEY, else edge function
+    if (process.env.GEMINI_API_KEY) {
+      void processCaptureDirect(supabase, userId, data.id);
+    } else {
+      void invokeEdge(supabase, 'process-capture', { capture_id: data.id });
+    }
 
     revalidateApp(['/inbox', '/dashboard']);
     return { ok: true, data: { id: data.id } };
@@ -93,6 +226,11 @@ export async function reprocessCapture(id: string): Promise<CaptureResult> {
       .update({ processing_status: 'pending' })
       .eq('id', id)
       .eq('user_id', userId);
+
+    if (process.env.GEMINI_API_KEY) {
+      await processCaptureDirect(supabase, userId, id);
+      return { ok: true };
+    }
     const out = await invokeEdge(supabase, 'process-capture', { capture_id: id });
     return { ok: true, data: out };
   } catch (err) {

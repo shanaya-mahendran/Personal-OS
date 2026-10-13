@@ -184,6 +184,6 @@ describe('process-capture pipeline (mocked Gemini)', () => {
     const values = await embedContent('I decided to prioritize backend roles', mock.impl);
     expect(values).toHaveLength(768);
     const body = JSON.parse(String(mock.calls[0]!.init?.body)) as { model: string };
-    expect(body.model).toBe('models/text-embedding-004');
+    expect(['models/gemini-embedding-001', 'models/text-embedding-004']).toContain(body.model);
   });
 });

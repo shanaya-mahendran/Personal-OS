@@ -40,12 +40,11 @@ export interface GeminiResponse {
 }
 
 export class GeminiError extends Error {
-  constructor(
-    message: string,
-    public readonly status?: number,
-  ) {
+  public readonly status?: number;
+  constructor(message: string, status?: number) {
     super(message);
     this.name = 'GeminiError';
+    this.status = status;
   }
 }
 
@@ -79,16 +78,24 @@ export interface GenerateOptions {
   maxOutputTokens?: number;
 }
 
+const CANDIDATE_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash',
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash-lite',
+];
+
 /**
  * Low-level generateContent call.
- * When `tools` are provided the model may answer with function calls instead
- * of text; both are surfaced to the caller.
+ * Automatically tries candidate models with fallback if a model experiences
+ * transient 503 high demand spikes or deprecation.
  */
 export async function generateContent(
   options: GenerateOptions,
   fetchImpl: typeof fetch = fetch,
 ): Promise<GeminiResponse> {
-  const model = options.model ?? 'gemini-2.0-flash';
+  const modelsToTry = options.model ? [options.model, ...CANDIDATE_MODELS.filter((m) => m !== options.model)] : CANDIDATE_MODELS;
   const body: Record<string, unknown> = {
     systemInstruction: { parts: [{ text: options.system }] },
     contents: options.contents,
@@ -102,44 +109,62 @@ export async function generateContent(
     ...(options.tools && options.tools.length > 0 ? { tools: [{ functionDeclarations: options.tools }] } : {}),
   };
 
-  const res = await fetchImpl(
-    `${GEMINI_BASE}/models/${model}:generateContent`,
-    {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-goog-api-key': apiKey(),
-      },
-      body: JSON.stringify(body),
-    },
-  );
+  let lastError: Error | null = null;
 
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new GeminiError(`Gemini ${res.status}: ${detail.slice(0, 500)}`, res.status);
+  for (const model of modelsToTry) {
+    try {
+      const res = await fetchImpl(
+        `${GEMINI_BASE}/models/${model}:generateContent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey(),
+          },
+          body: JSON.stringify(body),
+        },
+      );
+
+      if (!res.ok) {
+        const detail = await res.text().catch(() => '');
+        // If 503, 429, or 404, continue to next model in the candidate list
+        if ([404, 429, 503].includes(res.status)) {
+          lastError = new GeminiError(`Gemini ${model} ${res.status}: ${detail.slice(0, 300)}`, res.status);
+          continue;
+        }
+        throw new GeminiError(`Gemini ${res.status}: ${detail.slice(0, 500)}`, res.status);
+      }
+
+      const json = (await res.json()) as {
+        candidates?: Array<{
+          content?: { parts?: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }> };
+        }>;
+        usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
+      };
+
+      const parts = json.candidates?.[0]?.content?.parts ?? [];
+      const text = parts.map((p) => p.text ?? '').join('');
+      const toolCalls: ToolCall[] = parts
+        .filter((p): p is { functionCall: { name: string; args: Record<string, unknown> } } =>
+          Boolean(p.functionCall))
+        .map((p) => ({ name: p.functionCall.name, args: p.functionCall.args ?? {} }));
+
+      return {
+        text,
+        toolCalls,
+        promptTokens: json.usageMetadata?.promptTokenCount,
+        completionTokens: json.usageMetadata?.candidatesTokenCount,
+        raw: json,
+      };
+    } catch (err) {
+      if (err instanceof GeminiError && err.status && ![404, 429, 503].includes(err.status)) {
+        throw err;
+      }
+      lastError = err instanceof Error ? err : new Error(String(err));
+    }
   }
 
-  const json = (await res.json()) as {
-    candidates?: Array<{
-      content?: { parts?: Array<{ text?: string; functionCall?: { name: string; args: Record<string, unknown> } }> };
-    }>;
-    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number };
-  };
-
-  const parts = json.candidates?.[0]?.content?.parts ?? [];
-  const text = parts.map((p) => p.text ?? '').join('');
-  const toolCalls: ToolCall[] = parts
-    .filter((p): p is { functionCall: { name: string; args: Record<string, unknown> } } =>
-      Boolean(p.functionCall))
-    .map((p) => ({ name: p.functionCall.name, args: p.functionCall.args ?? {} }));
-
-  return {
-    text,
-    toolCalls,
-    promptTokens: json.usageMetadata?.promptTokenCount,
-    completionTokens: json.usageMetadata?.candidatesTokenCount,
-    raw: json,
-  };
+  throw lastError ?? new GeminiError('All Gemini models unavailable');
 }
 
 /** Parse JSON out of a model reply, tolerating code fences. */
@@ -155,31 +180,37 @@ export function parseJsonText<T>(text: string): T {
   return JSON.parse(candidate) as T;
 }
 
-/** text-embedding-004 → 768-dim vector. */
+/** gemini-embedding-001 (or gemini-embedding-2) → 768-dim vector. */
 export async function embedContent(
   text: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<number[]> {
-  const model = 'text-embedding-004';
-  const res = await fetchImpl(
-    `${GEMINI_BASE}/models/${model}:embedContent`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
-      body: JSON.stringify({
-        model: `models/${model}`,
-        content: { parts: [{ text: text.slice(0, 30000) }] },
-      }),
-    },
-  );
-  if (!res.ok) {
-    const detail = await res.text().catch(() => '');
-    throw new GeminiError(`Gemini embed ${res.status}: ${detail.slice(0, 300)}`, res.status);
+  const models = ['gemini-embedding-001', 'gemini-embedding-2'];
+  let lastErr: Error | null = null;
+  for (const model of models) {
+    try {
+      const res = await fetchImpl(
+        `${GEMINI_BASE}/models/${model}:embedContent`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey() },
+          body: JSON.stringify({
+            model: `models/${model}`,
+            content: { parts: [{ text: text.slice(0, 30000) }] },
+            outputDimensionality: 768,
+          }),
+        },
+      );
+      if (res.ok) {
+        const json = (await res.json()) as { embedding?: { values?: number[] } };
+        const values = json.embedding?.values;
+        if (values && values.length > 0) return values;
+      }
+      const detail = await res.text().catch(() => '');
+      lastErr = new GeminiError(`Gemini embed ${res.status}: ${detail.slice(0, 300)}`, res.status);
+    } catch (e) {
+      lastErr = e instanceof Error ? e : new Error(String(e));
+    }
   }
-  const json = (await res.json()) as {
-    embedding?: { values?: number[] };
-  };
-  const values = json.embedding?.values;
-  if (!values || values.length === 0) throw new GeminiError('Empty embedding response');
-  return values;
+  throw lastErr ?? new GeminiError('Embedding failed');
 }

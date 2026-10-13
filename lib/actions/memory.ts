@@ -6,6 +6,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { MemoryCreateSchema } from '@/lib/validation/career';
 import type { Database, MemoryRow } from '@/lib/supabase/types';
+import { embedContent } from '@/lib/gemini/client';
 import { ActionError, audit, errorMessage, requireContext } from './helpers';
 
 export interface MemoryActionResult<T = unknown> {
@@ -33,19 +34,36 @@ export async function createMemory(input: unknown): Promise<
       .single();
     if (error) throw new ActionError(error.message);
 
-    // Ask the Edge Function to embed it (GEMINI_API_KEY stays server-side).
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session) {
-        void supabase.functions.invoke('generate-embedding', {
-          body: { memory_id: data.id },
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
+    // Embed directly if GEMINI_API_KEY is available
+    if (process.env.GEMINI_API_KEY) {
+      try {
+        const text = `${parsed.kind}: ${parsed.title}\n${parsed.body}`;
+        const vector = await embedContent(text);
+        await supabase.from('memory_embeddings').upsert(
+          {
+            memory_id: data.id,
+            embedding: JSON.stringify(vector),
+          },
+          { onConflict: 'memory_id' },
+        );
+      } catch (embErr) {
+        console.warn('Direct memory embedding failed:', embErr);
       }
-    } catch {
-      // Embedding is asynchronous; the memory itself is already saved.
+    } else {
+      // Fallback: Ask the Edge Function to embed it
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          void supabase.functions.invoke('generate-embedding', {
+            body: { memory_id: data.id },
+            headers: { Authorization: `Bearer ${session.access_token}` },
+          });
+        }
+      } catch {
+        // Embedding is asynchronous; the memory itself is already saved.
+      }
     }
 
     await audit(supabase, userId, {
@@ -64,6 +82,14 @@ async function embedQuery(
   supabase: SupabaseClient<Database>,
   text: string,
 ): Promise<number[] | null> {
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return await embedContent(text);
+    } catch (e) {
+      console.warn('Direct query embedding failed:', e);
+    }
+  }
+
   try {
     const {
       data: { session },

@@ -12,9 +12,11 @@
  *  - Every execution re-checks Zod, runs conflict detection for events, and
  *    writes an audit row with source='ai'.
  */
-import { TOOL_SCHEMAS, MUTATING_TOOLS, type ToolName } from '@/lib/ai/functions';
+import { TOOL_SCHEMAS, MUTATING_TOOLS, toolDeclarations, type ToolName } from '@/lib/ai/functions';
 import { executeTool, ExecutorError } from '@/lib/ai/executor';
 import { detectConflicts, type OverlappingEvent } from '@/lib/calendar/conflicts';
+import { generateContent, type GeminiContent, type GeminiRole } from '@/lib/gemini/client';
+import { ASSISTANT_SYSTEM_PROMPT, fillPrompt } from '@/lib/gemini/prompts';
 import type { Database } from '@/lib/supabase/types';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ActionError, audit, errorMessage, revalidateApp, requireContext } from './helpers';
@@ -36,30 +38,120 @@ export interface ChatOutcome {
   tool_result?: unknown;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+async function runAssistantDirect(
+  supabase: SupabaseClient<Database>,
+  userId: string,
+  body: {
+    mode: 'chat' | 'summarize';
+    message: string;
+    history?: ChatMessage[];
+    tool_name?: string;
+    tool_result?: unknown;
+  },
+): Promise<ChatOutcome> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('timezone')
+    .eq('id', userId)
+    .maybeSingle();
+
+  const tz = profile?.timezone || 'Asia/Colombo';
+  const system = fillPrompt(ASSISTANT_SYSTEM_PROMPT, {
+    iso_now: new Date().toISOString(),
+    tz,
+  });
+
+  if (body.mode === 'summarize') {
+    const contents: GeminiContent[] = [
+      ...(body.history ?? []).slice(-10).map((t) => ({
+        role: (t.role === 'assistant' ? 'model' : 'user') as GeminiRole,
+        parts: [{ text: t.content }],
+      })),
+      { role: 'user', parts: [{ text: body.message }] },
+      {
+        role: 'user',
+        parts: [
+          {
+            text: `Tool result from ${body.tool_name ?? 'tool'}:\n${JSON.stringify(body.tool_result ?? null).slice(0, 6000)}\n\nAnswer the user's request using this data. If it contains schedule items, present them as a compact list with times.`,
+          },
+        ],
+      },
+    ];
+
+    const result = await generateContent({ system, contents });
+    return { reply: result.text.trim() };
+  }
+
+  // mode === 'chat'
+  const contents: GeminiContent[] = [
+    ...(body.history ?? []).slice(-20).map((t) => ({
+      role: (t.role === 'assistant' ? 'model' : 'user') as GeminiRole,
+      parts: [{ text: t.content }],
+    })),
+    { role: 'user', parts: [{ text: body.message }] },
+  ];
+
+  const result = await generateContent({
+    system,
+    contents,
+    tools: toolDeclarations(),
+  });
+
+  const call = result.toolCalls[0];
+  if (call) {
+    return {
+      reply: result.text.trim(),
+      proposal: {
+        name: call.name as ToolName,
+        args: call.args,
+      },
+    };
+  }
+
+  return { reply: result.text.trim() };
+}
+
 async function invokeAssistant(
   supabase: SupabaseClient<Database>,
-  body: Record<string, unknown>,
+  userId: string,
+  body: {
+    mode: 'chat' | 'summarize';
+    message: string;
+    history?: ChatMessage[];
+    tool_name?: string;
+    tool_result?: unknown;
+  },
 ): Promise<ChatOutcome | null> {
+  // Direct execution on server via GEMINI_API_KEY if present
+  if (process.env.GEMINI_API_KEY) {
+    try {
+      return await runAssistantDirect(supabase, userId, body);
+    } catch (directErr) {
+      console.warn('Direct Assistant invocation failed, falling back to Edge function:', directErr);
+    }
+  }
+
+  // Edge Function invocation fallback
   try {
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) return null;
     const res = await supabase.functions.invoke('ai-assistant', {
-      body,
+      body: { ...body, user_id: userId },
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
     if (res.error) throw new ActionError(res.error.message ?? 'Assistant unavailable');
     return res.data as ChatOutcome;
   } catch (err) {
     if (err instanceof ActionError) throw err;
-    throw new ActionError('Assistant is unavailable right now');
+    throw new ActionError('Assistant is unavailable right now. Please verify your GEMINI_API_KEY.');
   }
-}
-
-export interface ChatMessage {
-  role: 'user' | 'assistant';
-  content: string;
 }
 
 /** Persist a chat turn (spec §15: history lives in chat_messages). */
@@ -97,11 +189,10 @@ export async function sendAssistantMessage(
     if (!text) return { ok: false, error: 'Message is empty' };
     const { supabase, userId } = await requireContext();
 
-    const outcome = await invokeAssistant(supabase, {
+    const outcome = await invokeAssistant(supabase, userId, {
       mode: 'chat',
       message: text,
       history: history.slice(-20),
-      user_id: userId,
     });
     if (!outcome) throw new ActionError('Assistant unavailable');
 
@@ -113,12 +204,11 @@ export async function sendAssistantMessage(
         args: outcome.proposal.args,
         confirm: true,
       });
-      const summary = await invokeAssistant(supabase, {
+      const summary = await invokeAssistant(supabase, userId, {
         mode: 'summarize',
         message: text,
         tool_name: outcome.proposal.name,
         tool_result: executed.data ?? executed.error ?? null,
-        user_id: userId,
       });
       return {
         ok: true,
