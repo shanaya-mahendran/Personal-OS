@@ -14,6 +14,13 @@
 -- shared touch trigger.
 -- ============================================================================
 
+-- ── Extensions ─────────────────────────────────────────────────────────────
+-- Enable pgvector BEFORE any table that uses vector(n).
+-- Supabase projects have pgvector available; it just needs to be enabled once.
+create extension if not exists vector       with schema extensions;
+create extension if not exists "uuid-ossp" with schema extensions;
+create extension if not exists pg_trgm      with schema extensions;
+
 -- ── Enums ────────────────────────────────────────────────────────────────────
 create type task_status as enum ('todo', 'in_progress', 'done', 'cancelled');
 create type task_priority as enum ('low', 'medium', 'high', 'urgent');
