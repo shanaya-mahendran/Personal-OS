@@ -168,6 +168,9 @@ create table public.captures (
 );
 
 alter table public.tasks
+  drop constraint if exists tasks_source_capture_fk;
+
+alter table public.tasks
   add constraint tasks_source_capture_fk
   foreign key (source_capture_id) references public.captures (id) on delete set null;
 

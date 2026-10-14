@@ -99,8 +99,8 @@ language plpgsql
 as $$
 begin
   execute format(
-    'create trigger set_updated_at before update on %s for each row execute function public.set_updated_at()',
-    target
+    'drop trigger if exists set_updated_at on %s; create trigger set_updated_at before update on %s for each row execute function public.set_updated_at()',
+    target, target
   );
 end;
 $$;
@@ -188,6 +188,9 @@ create table if not exists public.captures (
 );
 
 alter table public.tasks
+  drop constraint if exists tasks_source_capture_fk;
+
+alter table public.tasks
   add constraint tasks_source_capture_fk
   foreign key (source_capture_id) references public.captures (id) on delete set null;
 
@@ -230,7 +233,7 @@ create table if not exists public.events (
   check (end_at > start_at)
 );
 
-create index events_user_start_idx on public.events (user_id, start_at);
+create index if not exists events_user_start_idx on public.events (user_id, start_at);
 
 -- ── Notes, ideas, memories ──────────────────────────────────────────────────
 create table if not exists public.notes (
@@ -511,7 +514,7 @@ create table if not exists public.ai_runs (
   created_at timestamptz not null default now()
 );
 
-create index ai_runs_user_fn_time_idx on public.ai_runs (user_id, function_name, created_at);
+create index if not exists ai_runs_user_fn_time_idx on public.ai_runs (user_id, function_name, created_at);
 
 create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
@@ -556,15 +559,15 @@ end;
 $$;
 
 -- ── Useful indexes ──────────────────────────────────────────────────────────
-create index tasks_user_status_due_idx on public.tasks (user_id, status, due_at);
-create index tasks_user_project_idx on public.tasks (user_id, project_id);
-create index captures_user_created_idx on public.captures (user_id, created_at desc);
-create index events_user_range_idx on public.events (user_id, start_at, end_at);
-create index notes_user_idx on public.notes (user_id, created_at desc);
-create index memories_user_idx on public.memories (user_id, created_at desc);
-create index career_user_status_idx on public.career_opportunities (user_id, status);
-create index entertainment_user_date_idx on public.entertainment_logs (user_id, date);
-create index notifications_user_scheduled_idx on public.notifications (user_id, scheduled_at);
+create index if not exists tasks_user_status_due_idx on public.tasks (user_id, status, due_at);
+create index if not exists tasks_user_project_idx on public.tasks (user_id, project_id);
+create index if not exists captures_user_created_idx on public.captures (user_id, created_at desc);
+create index if not exists events_user_range_idx on public.events (user_id, start_at, end_at);
+create index if not exists notes_user_idx on public.notes (user_id, created_at desc);
+create index if not exists memories_user_idx on public.memories (user_id, created_at desc);
+create index if not exists career_user_status_idx on public.career_opportunities (user_id, status);
+create index if not exists entertainment_user_date_idx on public.entertainment_logs (user_id, date);
+create index if not exists notifications_user_scheduled_idx on public.notifications (user_id, scheduled_at);
 
 
 -- ----------------------------------------------------------------------------
@@ -1014,8 +1017,8 @@ begin
 end;
 $$;
 
-create index branding_content_user_idx on public.branding_content (user_id, status);
-create index family_events_user_date_idx on public.family_events (user_id, event_date);
+create index if not exists branding_content_user_idx on public.branding_content (user_id, status);
+create index if not exists family_events_user_date_idx on public.family_events (user_id, event_date);
 
 
 -- ----------------------------------------------------------------------------
