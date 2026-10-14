@@ -5,24 +5,64 @@
 -- ============================================================================
 
 -- ── Enums ────────────────────────────────────────────────────────────────────
-create type task_status as enum ('todo', 'in_progress', 'done', 'cancelled');
-create type task_priority as enum ('low', 'medium', 'high', 'urgent');
-create type event_status as enum ('scheduled', 'cancelled', 'completed');
-create type capture_input_type as enum ('text', 'image', 'voice', 'document', 'paste');
-create type capture_status as enum ('pending', 'processing', 'awaiting_confirmation', 'confirmed', 'rejected', 'failed');
-create type memory_kind as enum ('decision', 'lesson', 'preference', 'fact', 'experience');
-create type prayer_name as enum ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha');
-create type career_type as enum ('internship', 'full_time', 'part_time', 'contract');
-create type work_mode as enum ('remote', 'hybrid', 'onsite');
-create type career_status as enum ('saved', 'applied', 'screening', 'interview', 'technical', 'offer', 'accepted', 'rejected', 'withdrawn');
-create type meal_type as enum ('breakfast', 'lunch', 'dinner', 'snack');
-create type karate_focus as enum ('kata', 'kumite', 'conditioning', 'technique', 'grading', 'competition');
-create type entertainment_category as enum ('movie', 'tv', 'anime', 'game', 'music', 'youtube', 'book', 'social');
-create type music_mood as enum ('focus', 'calm', 'energetic', 'happy', 'sad', 'social', 'travel', 'custom');
-create type idea_status as enum ('seed', 'exploring', 'parked', 'promoted');
-create type project_status as enum ('active', 'paused', 'done', 'archived');
-create type audit_source as enum ('user', 'ai', 'system');
-create type chat_role as enum ('user', 'assistant');
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'task_status') then
+    create type task_status as enum ('todo', 'in_progress', 'done', 'cancelled');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'task_priority') then
+    create type task_priority as enum ('low', 'medium', 'high', 'urgent');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'event_status') then
+    create type event_status as enum ('scheduled', 'cancelled', 'completed');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'capture_input_type') then
+    create type capture_input_type as enum ('text', 'image', 'voice', 'document', 'paste');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'capture_status') then
+    create type capture_status as enum ('pending', 'processing', 'awaiting_confirmation', 'confirmed', 'rejected', 'failed');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'memory_kind') then
+    create type memory_kind as enum ('decision', 'lesson', 'preference', 'fact', 'experience');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'prayer_name') then
+    create type prayer_name as enum ('fajr', 'dhuhr', 'asr', 'maghrib', 'isha');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'career_type') then
+    create type career_type as enum ('internship', 'full_time', 'part_time', 'contract');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'work_mode') then
+    create type work_mode as enum ('remote', 'hybrid', 'onsite');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'career_status') then
+    create type career_status as enum ('saved', 'applied', 'screening', 'interview', 'technical', 'offer', 'accepted', 'rejected', 'withdrawn');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'meal_type') then
+    create type meal_type as enum ('breakfast', 'lunch', 'dinner', 'snack');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'karate_focus') then
+    create type karate_focus as enum ('kata', 'kumite', 'conditioning', 'technique', 'grading', 'competition');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'entertainment_category') then
+    create type entertainment_category as enum ('movie', 'tv', 'anime', 'game', 'music', 'youtube', 'book', 'social');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'music_mood') then
+    create type music_mood as enum ('focus', 'calm', 'energetic', 'happy', 'sad', 'social', 'travel', 'custom');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'idea_status') then
+    create type idea_status as enum ('seed', 'exploring', 'parked', 'promoted');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'project_status') then
+    create type project_status as enum ('active', 'paused', 'done', 'archived');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'audit_source') then
+    create type audit_source as enum ('user', 'ai', 'system');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'chat_role') then
+    create type chat_role as enum ('user', 'assistant');
+  end if;
+end;
+$$;
 
 -- ── updated_at touch trigger ────────────────────────────────────────────────
 create or replace function public.set_updated_at()

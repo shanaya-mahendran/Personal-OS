@@ -5,9 +5,19 @@
 -- inherit the same RLS pattern.
 -- ============================================================================
 
-create type branding_platform as enum ('linkedin', 'github', 'portfolio');
-create type branding_status as enum ('idea', 'draft', 'ready', 'published', 'archived');
-create type family_kind as enum ('gathering', 'visit', 'task', 'celebration', 'other');
+do $$
+begin
+  if not exists (select 1 from pg_type where typname = 'branding_platform') then
+    create type branding_platform as enum ('linkedin', 'github', 'portfolio');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'branding_status') then
+    create type branding_status as enum ('idea', 'draft', 'ready', 'published', 'archived');
+  end if;
+  if not exists (select 1 from pg_type where typname = 'family_kind') then
+    create type family_kind as enum ('gathering', 'visit', 'task', 'celebration', 'other');
+  end if;
+end;
+$$;
 
 create table public.branding_content (
   id uuid primary key default gen_random_uuid(),

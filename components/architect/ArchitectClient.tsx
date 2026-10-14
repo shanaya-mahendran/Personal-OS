@@ -190,7 +190,7 @@ function HabitTracker({
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-4 shadow-sm">
-      <h2 className="mb-3 text-base font-semibold text-primary">Today's Habits</h2>
+      <h2 className="mb-3 text-base font-semibold text-primary">Today&apos;s Habits</h2>
       <div className="space-y-2">
         {habits.map((habit) => {
           const entry = entries.find((e) => e.habit_name === habit);
@@ -555,7 +555,7 @@ export function ArchitectClient({ plan, reflections, habitEntries, taskCompletio
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-secondary">
-                Today's Task Score
+                Today&apos;s Task Score
               </p>
               <p className="mt-0.5 text-2xl font-bold text-primary">{taskCompletionToday}%</p>
             </div>
