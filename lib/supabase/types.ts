@@ -85,6 +85,8 @@ export type ChatRole = 'user' | 'assistant';
 export type BrandingPlatform = 'linkedin' | 'github' | 'portfolio';
 export type BrandingStatus = 'idea' | 'draft' | 'ready' | 'published' | 'archived';
 export type FamilyKind = 'gathering' | 'visit' | 'task' | 'celebration' | 'other';
+export type GrowthPhase = 'cut_excess' | 'build_foundation' | 'broaden_horizons';
+export type ReflectionKind = 'quarterly_mirror' | 'pulse_check_15d';
 
 // ── Rows ─────────────────────────────────────────────────────────────────────
 export type ProfileRow = {
@@ -524,6 +526,44 @@ export type FamilyEventRow = {
   updated_at: string;
 };
 
+export type GrowthPlanRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  started_at: string;
+  ends_at: string;
+  current_phase: GrowthPhase;
+  phase_notes: Json;
+  goals: Json;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ReflectionRow = {
+  id: string;
+  user_id: string;
+  plan_id: string | null;
+  kind: ReflectionKind;
+  answers: Json;
+  ai_insights: string | null;
+  completion_rate: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type HabitTrackerEntryRow = {
+  id: string;
+  user_id: string;
+  plan_id: string | null;
+  habit_name: string;
+  date: string;
+  completed: boolean;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 // ── Database ─────────────────────────────────────────────────────────────────
 export type Database = {
   public: {
@@ -570,6 +610,9 @@ export type Database = {
       branding_content: Table<BrandingContentRow>;
       branding_metrics: Table<BrandingMetricRow>;
       family_events: Table<FamilyEventRow>;
+      growth_plans: Table<GrowthPlanRow>;
+      reflections: Table<ReflectionRow>;
+      habit_tracker_entries: Table<HabitTrackerEntryRow>;
     };
     Views: Record<string, never>;
     Functions: {

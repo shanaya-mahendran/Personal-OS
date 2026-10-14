@@ -10,10 +10,12 @@ import {
   House,
   ListChecks,
   CalendarBlank,
-  Sparkle,
   Plus,
   Camera,
   NotePencil,
+  Television,
+  Brain,
+  Compass,
 } from '@phosphor-icons/react';
 import { TopBar } from '@/components/layout/TopBar';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -25,7 +27,9 @@ const TABS = [
   { href: '/dashboard', label: 'Today', icon: House },
   { href: '/tasks', label: 'Tasks', icon: ListChecks },
   { href: '/calendar', label: 'Calendar', icon: CalendarBlank },
-  { href: '/assistant', label: 'Ask', icon: Sparkle },
+  { href: '/architect', label: 'Architect', icon: Compass },
+  { href: '/entertainment', label: 'Media', icon: Television },
+  { href: '/memory', label: 'Memory', icon: Brain },
 ] as const;
 
 export function AppShell({

@@ -3,10 +3,13 @@
 /**
  * Entertainment log (spec §13): category + duration; the dashboard shows
  * "Entertainment Today: Xh Ym" computed from these rows.
+ *
+ * Premium treatment: warm cinematic list with category glyphs, duration chips,
+ * and an active-now music session banner.
  */
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, MusicNoteSimple } from '@phosphor-icons/react';
+import { Plus, GameController, MusicNote, Play, Book, Heart, Television, FilmReel } from '@phosphor-icons/react';
 import type { EntertainmentLogRow, MusicSessionRow, EntertainmentCategory } from '@/lib/supabase/types';
 import { EntertainmentLogCreateSchema } from '@/lib/validation/career';
 import { createEntertainmentLog } from '@/lib/actions/modules';
@@ -27,6 +30,28 @@ const CATEGORIES: EntertainmentCategory[] = [
   'book',
   'social',
 ];
+
+const CATEGORY_GLYPH: Record<EntertainmentCategory, typeof GameController> = {
+  movie: FilmReel,
+  tv: Television,
+  anime: FilmReel,
+  game: GameController,
+  music: MusicNote,
+  youtube: Play,
+  book: Book,
+  social: Heart,
+};
+
+const CATEGORY_LABEL: Record<EntertainmentCategory, string> = {
+  movie: 'Film',
+  tv: 'TV',
+  anime: 'Anime',
+  game: 'Game',
+  music: 'Music',
+  youtube: 'Video',
+  book: 'Book',
+  social: 'Social',
+};
 
 export function EntertainmentView({
   today,
@@ -82,7 +107,7 @@ export function EntertainmentView({
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Entertainment</h1>
           <p className="font-mono text-sm tabular text-muted">
-            Entertainment today: {formatDuration(todayMinutes)}
+            Today: {formatDuration(todayMinutes)}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -107,7 +132,7 @@ export function EntertainmentView({
                   <SelectContent>
                     {CATEGORIES.map((c) => (
                       <SelectItem key={c} value={c}>
-                        {c[0]!.toUpperCase() + c.slice(1)}
+                        {CATEGORY_LABEL[c]}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -119,7 +144,7 @@ export function EntertainmentView({
                   value={form.title}
                   onChange={(e) => setForm({ ...form, title: e.target.value })}
                   required
-                  placeholder="What did you watch/play/read?"
+                  placeholder="What did you watch, play, or read?"
                 />
               </Field>
               <Field label="Minutes" htmlFor="e-mins" required>
@@ -143,15 +168,21 @@ export function EntertainmentView({
       </header>
 
       {activeSession ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-4 py-3">
-          <MusicNoteSimple size={18} className="text-grove" />
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-ink">
-              {activeSession.track ?? 'Unknown track'}
-            </p>
-            <p className="truncate text-xs text-muted">{activeSession.artist ?? 'Listening now'}</p>
+        <div className="living-bezel-glow flex items-center gap-3 rounded-2xl px-4 py-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-living-gold-soft">
+            <MusicNote size={18} className="text-living-gold" weight="fill" />
           </div>
-          <span className="text-[11px] uppercase text-muted">{activeSession.mood}</span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium text-living-ink">
+              {activeSession.track ?? 'Listening now'}
+            </p>
+            <p className="truncate text-xs text-living-muted">
+              {activeSession.artist ?? ''}
+            </p>
+          </div>
+          <span className="rounded-full bg-living-gold-soft px-2.5 py-0.5 text-[11px] font-medium uppercase tracking-wider text-living-gold">
+            {activeSession.mood ?? 'Now'}
+          </span>
         </div>
       ) : null}
 
@@ -161,19 +192,30 @@ export function EntertainmentView({
         </div>
       ) : (
         <ul className="hairline-divide rounded-2xl border border-line bg-surface">
-          {logs.map((l) => (
-            <li key={l.id} className="flex items-center justify-between gap-3 px-4 py-3">
-              <div className="min-w-0">
-                <p className="truncate text-sm text-ink">{l.title}</p>
-                <p className="font-mono text-[11px] tabular text-muted">
-                  {l.date} · {l.category}
-                </p>
-              </div>
-              <span className="font-mono text-xs tabular text-ink">
-                {formatDuration(l.duration_min)}
-              </span>
-            </li>
-          ))}
+          {logs.map((l) => {
+            const Glyph = CATEGORY_GLYPH[l.category] ?? FilmReel;
+            return (
+              <li key={l.id} className="flex items-center gap-3 px-4 py-3">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-grove-tint">
+                  <Glyph size={15} weight="duotone" className="text-grove" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-ink">{l.title}</p>
+                  <div className="flex items-center gap-2 font-mono text-[11px] tabular text-muted">
+                    <span>{CATEGORY_LABEL[l.category]}</span>
+                    <span aria-hidden="true">·</span>
+                    <span>{formatDuration(l.duration_min)}
+                      .
+                      {l.date}
+                    </span>
+                  </div>
+                </div>
+                <span className="font-mono text-xs tabular text-ink">
+                  {formatDuration(l.duration_min)}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

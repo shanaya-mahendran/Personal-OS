@@ -30,8 +30,6 @@ export function BottomNav({ tabs }: { tabs: readonly TabDef[] }) {
     { href: '/karate', label: 'Karate' },
     { href: '/family', label: 'Family' },
     { href: '/eating', label: 'Eating' },
-    { href: '/entertainment', label: 'Entertainment' },
-    { href: '/memory', label: 'Memory' },
   ];
 
   return (

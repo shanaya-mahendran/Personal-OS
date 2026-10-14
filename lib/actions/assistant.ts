@@ -245,9 +245,14 @@ export async function confirmProposal(
 
     // `force` = user acknowledged "Keep both" in the conflict dialog.
     const force = Boolean(proposal.args.force);
-    // Pre-validate so we can produce a friendly conflict preview.
-    const parsed = TOOL_SCHEMAS[name].safeParse(proposal.args);
-    if (!parsed.success) throw new ActionError('Proposal arguments are no longer valid');
+    // Pre-validate args. Include validation details in the error so that
+    // mismatches from Gemini are diagnosable in server logs.
+    const schema = TOOL_SCHEMAS[name];
+    const parsed = schema.safeParse(proposal.args);
+    if (!parsed.success) {
+      const detail = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ');
+      throw new ActionError(`Proposal arguments are no longer valid: ${detail}`);
+    }
 
     if (!force && (name === 'create_event' || name === 'update_event')) {
       const args = parsed.data as { start_at?: string; end_at?: string; id?: string };

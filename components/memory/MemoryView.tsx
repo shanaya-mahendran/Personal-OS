@@ -6,7 +6,15 @@
  */
 import * as React from 'react';
 import { useRouter } from 'next/navigation';
-import { MagnifyingGlass, Plus } from '@phosphor-icons/react';
+import {
+  MagnifyingGlass,
+  Plus,
+  BookmarkSimple,
+  Lightbulb,
+  Gear,
+  Note,
+  Smiley,
+} from '@phosphor-icons/react';
 import type { MemoryRow } from '@/lib/supabase/types';
 import { createMemory, searchMemories, type SearchHit } from '@/lib/actions/memory';
 import { Button } from '@/components/ui/button';
@@ -17,8 +25,25 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatDate } from '@/lib/utils/dates';
+import { cn } from '@/lib/utils/cn';
 
 const KINDS = ['decision', 'lesson', 'preference', 'fact', 'experience'] as const;
+
+const KIND_GLYPH: Record<typeof KINDS[number], typeof BookmarkSimple> = {
+  decision: BookmarkSimple,
+  lesson: Lightbulb,
+  preference: Gear,
+  fact: Note,
+  experience: Smiley,
+};
+
+const KIND_LABEL: Record<typeof KINDS[number], string> = {
+  decision: 'Decision',
+  lesson: 'Lesson',
+  preference: 'Preference',
+  fact: 'Fact',
+  experience: 'Experience',
+};
 
 export function MemoryView({ memories }: { memories: MemoryRow[] }) {
   const router = useRouter();
@@ -78,7 +103,7 @@ export function MemoryView({ memories }: { memories: MemoryRow[] }) {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Memory</h1>
           <p className="text-sm text-muted">
-            {memories.length} memories · semantic search over {mode === 'vector' ? 'embeddings' : 'text'}
+            {memories.length} memories · searching {mode === 'vector' ? 'embeddings' : 'text'}
           </p>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -90,6 +115,7 @@ export function MemoryView({ memories }: { memories: MemoryRow[] }) {
           <DialogContent className="max-h-[85dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Save a memory</DialogTitle>
+              <p className="text-xs text-muted">Decisions, lessons, and moments worth keeping.</p>
             </DialogHeader>
             <form onSubmit={(e) => void submit(e)} className="grid gap-3">
               <Field label="Kind" htmlFor="m-kind">
@@ -127,15 +153,25 @@ export function MemoryView({ memories }: { memories: MemoryRow[] }) {
         </Dialog>
       </header>
 
-      <form onSubmit={(e) => void search(e)} className="flex gap-2">
+      <form onSubmit={(e) => void search(e)} className="relative">
+        <MagnifyingGlass
+          size={16}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted"
+          weight="duotone"
+        />
         <Input
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Fuzzy search: what did I decide about internships?"
+          placeholder="Search: what did I decide about internships?"
           aria-label="Search memories"
+          className="pl-9"
         />
-        <Button type="submit" variant="outline" disabled={searching}>
-          <MagnifyingGlass size={16} />
+        <Button
+          type="submit"
+          variant="outline"
+          disabled={searching}
+          className="ml-2"
+        >
           {searching ? '…' : 'Search'}
         </Button>
       </form>
@@ -151,34 +187,55 @@ export function MemoryView({ memories }: { memories: MemoryRow[] }) {
         </div>
       ) : (
         <ul className="grid gap-3">
-          {displayed.map((m) => (
-            <li key={m.id} className="rounded-2xl border border-line bg-surface p-4">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-semibold text-ink">{m.title}</p>
-                <div className="flex shrink-0 items-center gap-2">
-                  {typeof m.similarity === 'number' ? (
-                    <span className="font-mono text-[10px] tabular text-grove">
-                      {Math.round(m.similarity * 100)}% match
-                    </span>
-                  ) : null}
-                  <Badge variant="secondary">{m.kind}</Badge>
+          {displayed.map((m) => {
+            const Glyph = KIND_GLYPH[m.kind as typeof KINDS[number]] ?? Note;
+            const isSearchHit = typeof m.similarity === 'number';
+            return (
+              <li
+                key={m.id}
+                className={cn(
+                  'rounded-2xl border p-4 transition-colors',
+                  isSearchHit
+                    ? 'border-grove-tint bg-grove-tint/30'
+                    : 'border-line bg-surface',
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface-2 ring-1 ring-line">
+                        <Glyph size={12} weight="duotone" className="text-grove" />
+                      </div>
+                      <p className="text-sm font-semibold text-ink">{m.title}</p>
+                    </div>
+                    <p className="mt-1.5 whitespace-pre-wrap text-sm text-muted">{m.body}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    {isSearchHit && m.similarity != null ? (
+                      <span className="font-mono text-[10px] tabular text-grove">
+                        {Math.round(m.similarity * 100)}%
+                      </span>
+                    ) : null}
+                    <Badge variant="secondary" className="font-normal capitalize">
+                      {KIND_LABEL[m.kind as typeof KINDS[number]] ?? m.kind}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-              <p className="mt-1.5 whitespace-pre-wrap text-sm text-muted">{m.body}</p>
-              <div className="mt-2 flex items-center justify-between font-mono text-[11px] tabular text-muted">
-                <span>{formatDate(m.created_at)}</span>
-                {m.source_capture_id ? (
-                  <button
-                    type="button"
-                    onClick={() => router.push('/inbox')}
-                    className="text-grove underline-offset-4 hover:underline"
-                  >
-                    from capture
-                  </button>
-                ) : null}
-              </div>
-            </li>
-          ))}
+                <div className="mt-2 flex items-center justify-between font-mono text-[11px] tabular text-muted">
+                  <span>{formatDate(m.created_at)}</span>
+                  {m.source_capture_id ? (
+                    <button
+                      type="button"
+                      onClick={() => router.push('/inbox')}
+                      className="text-grove underline-offset-4 hover:underline"
+                    >
+                      from capture
+                    </button>
+                  ) : null}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

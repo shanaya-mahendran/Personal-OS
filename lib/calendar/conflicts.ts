@@ -55,14 +55,22 @@ export async function detectConflicts(
   userId: string,
   { start_at, end_at, excludeId }: ConflictInput,
 ): Promise<OverlappingEvent[]> {
-  const { data, error } = await supabase
+  // Build the query conditionally: only apply .neq('id', ...) when we
+  // have a real UUID to exclude. Passing an empty string would cause
+  // Postgres to throw "invalid input syntax for type uuid: ''".
+  let query = supabase
     .from('events')
     .select('id, title, start_at, end_at, location')
     .eq('user_id', userId)
-    .neq('id', excludeId ?? '')
     .neq('status', 'cancelled')
     .lt('start_at', end_at)
     .gt('end_at', start_at);
+
+  if (excludeId) {
+    query = query.neq('id', excludeId);
+  }
+
+  const { data, error } = await query;
 
   if (error) throw new Error(`Conflict check failed: ${error.message}`);
   return (data ?? []) as OverlappingEvent[];
