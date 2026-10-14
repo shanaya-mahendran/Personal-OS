@@ -106,7 +106,7 @@ end;
 $$;
 
 -- ── Profiles & settings ─────────────────────────────────────────────────────
-create table public.profiles (
+create table if not exists public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   display_name text,
   timezone text not null default 'Asia/Colombo',
@@ -115,7 +115,7 @@ create table public.profiles (
   updated_at timestamptz not null default now()
 );
 
-create table public.settings (
+create table if not exists public.settings (
   user_id uuid primary key references auth.users (id) on delete cascade,
   notification_prefs jsonb not null default '{"reminders": true, "lead_minutes": 15, "categories": {"events": true, "tasks": true, "prayers": false}}'::jsonb,
   dashboard_prefs jsonb not null default '{}'::jsonb,
@@ -127,7 +127,7 @@ create table public.settings (
 );
 
 -- ── Life structure ──────────────────────────────────────────────────────────
-create table public.areas (
+create table if not exists public.areas (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
@@ -139,7 +139,7 @@ create table public.areas (
   unique (user_id, name)
 );
 
-create table public.projects (
+create table if not exists public.projects (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   area_id uuid references public.areas (id) on delete set null,
@@ -153,7 +153,7 @@ create table public.projects (
   updated_at timestamptz not null default now()
 );
 
-create table public.tasks (
+create table if not exists public.tasks (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   project_id uuid references public.projects (id) on delete set null,
@@ -171,7 +171,7 @@ create table public.tasks (
   updated_at timestamptz not null default now()
 );
 
-create table public.captures (
+create table if not exists public.captures (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   input_type capture_input_type not null default 'text',
@@ -191,7 +191,7 @@ alter table public.tasks
   add constraint tasks_source_capture_fk
   foreign key (source_capture_id) references public.captures (id) on delete set null;
 
-create table public.attachments (
+create table if not exists public.attachments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   capture_id uuid references public.captures (id) on delete cascade,
@@ -202,7 +202,7 @@ create table public.attachments (
   updated_at timestamptz not null default now()
 );
 
-create table public.event_sources (
+create table if not exists public.event_sources (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   capture_id uuid references public.captures (id) on delete set null,
@@ -212,7 +212,7 @@ create table public.event_sources (
   updated_at timestamptz not null default now()
 );
 
-create table public.events (
+create table if not exists public.events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
@@ -233,7 +233,7 @@ create table public.events (
 create index events_user_start_idx on public.events (user_id, start_at);
 
 -- ── Notes, ideas, memories ──────────────────────────────────────────────────
-create table public.notes (
+create table if not exists public.notes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
@@ -246,7 +246,7 @@ create table public.notes (
   updated_at timestamptz not null default now()
 );
 
-create table public.ideas (
+create table if not exists public.ideas (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
@@ -257,7 +257,7 @@ create table public.ideas (
   updated_at timestamptz not null default now()
 );
 
-create table public.memories (
+create table if not exists public.memories (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   kind memory_kind not null,
@@ -269,7 +269,7 @@ create table public.memories (
 );
 
 -- Populated by the generate-embedding edge function (0003 adds the vector).
-create table public.memory_embeddings (
+create table if not exists public.memory_embeddings (
   id uuid primary key default gen_random_uuid(),
   memory_id uuid not null unique references public.memories (id) on delete cascade,
   embedding vector(768),
@@ -277,7 +277,7 @@ create table public.memory_embeddings (
 );
 
 -- ── Prayer ──────────────────────────────────────────────────────────────────
-create table public.prayer_schedules (
+create table if not exists public.prayer_schedules (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -292,7 +292,7 @@ create table public.prayer_schedules (
   unique (user_id, date)
 );
 
-create table public.prayer_logs (
+create table if not exists public.prayer_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -305,7 +305,7 @@ create table public.prayer_logs (
 );
 
 -- ── Career ──────────────────────────────────────────────────────────────────
-create table public.career_opportunities (
+create table if not exists public.career_opportunities (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   company text not null,
@@ -326,7 +326,7 @@ create table public.career_opportunities (
   updated_at timestamptz not null default now()
 );
 
-create table public.career_applications (
+create table if not exists public.career_applications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   opportunity_id uuid not null references public.career_opportunities (id) on delete cascade,
@@ -336,7 +336,7 @@ create table public.career_applications (
   updated_at timestamptz not null default now()
 );
 
-create table public.interviews (
+create table if not exists public.interviews (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   opportunity_id uuid not null references public.career_opportunities (id) on delete cascade,
@@ -349,7 +349,7 @@ create table public.interviews (
 );
 
 -- ── Volunteering ────────────────────────────────────────────────────────────
-create table public.volunteering (
+create table if not exists public.volunteering (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   organization text not null,
@@ -364,7 +364,7 @@ create table public.volunteering (
   updated_at timestamptz not null default now()
 );
 
-create table public.volunteering_events (
+create table if not exists public.volunteering_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   volunteering_id uuid not null references public.volunteering (id) on delete cascade,
@@ -376,7 +376,7 @@ create table public.volunteering_events (
 );
 
 -- ── Habits ──────────────────────────────────────────────────────────────────
-create table public.habits (
+create table if not exists public.habits (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
@@ -387,7 +387,7 @@ create table public.habits (
   updated_at timestamptz not null default now()
 );
 
-create table public.habit_logs (
+create table if not exists public.habit_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   habit_id uuid not null references public.habits (id) on delete cascade,
@@ -400,7 +400,7 @@ create table public.habit_logs (
 );
 
 -- ── Eating ──────────────────────────────────────────────────────────────────
-create table public.meals (
+create table if not exists public.meals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -413,7 +413,7 @@ create table public.meals (
   unique (user_id, date, meal_type)
 );
 
-create table public.water_logs (
+create table if not exists public.water_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -424,7 +424,7 @@ create table public.water_logs (
 );
 
 -- ── Karate ──────────────────────────────────────────────────────────────────
-create table public.karate_sessions (
+create table if not exists public.karate_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -435,7 +435,7 @@ create table public.karate_sessions (
   updated_at timestamptz not null default now()
 );
 
-create table public.karate_goals (
+create table if not exists public.karate_goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
@@ -447,7 +447,7 @@ create table public.karate_goals (
 );
 
 -- ── Entertainment ───────────────────────────────────────────────────────────
-create table public.entertainment_logs (
+create table if not exists public.entertainment_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   date date not null,
@@ -458,7 +458,7 @@ create table public.entertainment_logs (
   updated_at timestamptz not null default now()
 );
 
-create table public.music_sessions (
+create table if not exists public.music_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   started_at timestamptz not null default now(),
@@ -471,7 +471,7 @@ create table public.music_sessions (
 );
 
 -- ── Notifications, audit, AI runs, chat ─────────────────────────────────────
-create table public.notifications (
+create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
@@ -485,7 +485,7 @@ create table public.notifications (
   updated_at timestamptz not null default now()
 );
 
-create table public.audit_logs (
+create table if not exists public.audit_logs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   action text not null,
@@ -498,7 +498,7 @@ create table public.audit_logs (
   updated_at timestamptz not null default now()
 );
 
-create table public.ai_runs (
+create table if not exists public.ai_runs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   function_name text not null,
@@ -513,7 +513,7 @@ create table public.ai_runs (
 
 create index ai_runs_user_fn_time_idx on public.ai_runs (user_id, function_name, created_at);
 
-create table public.chat_messages (
+create table if not exists public.chat_messages (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   role chat_role not null,
@@ -524,7 +524,7 @@ create table public.chat_messages (
 );
 
 -- ── Known places (geofences, context engine) ────────────────────────────────
-create table public.known_places (
+create table if not exists public.known_places (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   name text not null,
@@ -965,7 +965,7 @@ begin
 end;
 $$;
 
-create table public.branding_content (
+create table if not exists public.branding_content (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   platform branding_platform not null,
@@ -980,7 +980,7 @@ create table public.branding_content (
 );
 
 -- Snapshots of platform numbers the user records manually (never invented).
-create table public.branding_metrics (
+create table if not exists public.branding_metrics (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   platform branding_platform not null,
@@ -991,7 +991,7 @@ create table public.branding_metrics (
   unique (user_id, platform, metric_date)
 );
 
-create table public.family_events (
+create table if not exists public.family_events (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users (id) on delete cascade,
   title text not null,
